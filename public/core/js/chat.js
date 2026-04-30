@@ -100,41 +100,48 @@ function listenToInbox() {
         });
 }
 
-// --- PERFIL PÚBLICO ---
+// --- PERFIL PÚBLICO (ATUALIZADO BOOTSTRAP) ---
 function viewUserProfile(uid, uname, ucourse) {
     const sec = document.getElementById('view-public-profile');
     if(!sec) return;
     
-    // Filtra livros do usuário alvo
+    // Atualiza o Cabeçalho
+    document.getElementById('public-profile-avatar').innerText = uname.charAt(0).toUpperCase();
+    document.getElementById('public-profile-name').innerText = uname;
+    document.getElementById('public-profile-course').innerText = ucourse || 'Aluno Gran';
+
+    // Lista de livros
+    const listContainer = document.getElementById('public-books-list');
     const userBooks = allBooksCache.filter(b => b.ownerId === uid);
-    
-    // Verifica Match (se eu quero algo que ele tem)
     const myWishes = allWishesCache.filter(w => w.userId === currentUserData.uid);
     
-    sec.innerHTML = `
-        <div class="public-profile-container">
-            <div class="public-profile-header">
-                <button onclick="navTo('view-home')" class="btn-back-absolute"><span class="material-icons">arrow_back</span> Voltar</button>
-                <div class="avatar-large" style="margin-top:20px;">${uname.charAt(0)}</div>
-                <h3 style="color:var(--primary-color); margin:10px 0;">${uname}</h3>
-                <span class="course-badge">${ucourse || 'Aluno Gran'}</span>
-            </div>
-            <div class="divider"></div>
-            <h4 style="text-align:left; color:#666; margin-bottom:15px;">Estante (${userBooks.length})</h4>
-            <div class="book-grid">
-                ${userBooks.map(b => {
-                    const isMatch = myWishes.some(w => b.title.toLowerCase().includes(w.title.toLowerCase()));
-                    const safeTitle = b.title.replace(/'/g, "\\'");
-                    return `
-                    <div class="book-card" style="${isMatch ? 'border:2px solid #2196F3;' : ''}">
-                        ${isMatch ? '<div class="badge-match">★ Na sua Lista</div>' : ''}
-                        <img src="${b.image}" onerror="this.src='https://via.placeholder.com/150'">
-                        <h4>${b.title}</h4>
-                        <button onclick="startChat('${uid}', '${uname}', '${safeTitle}')" class="btn-primary-gran">Interesse</button>
-                    </div>`;
-                }).join('')}
-                ${userBooks.length === 0 ? '<p>Nenhum livro visível.</p>' : ''}
-            </div>
-        </div>`;
+    listContainer.innerHTML = '';
+
+    if (userBooks.length === 0) {
+        listContainer.innerHTML = '<div class="col-12 text-center text-secondary py-5">Este aluno não tem anúncios no momento.</div>';
+    } else {
+        userBooks.forEach(b => {
+            const isMatch = myWishes.some(w => b.title.toLowerCase().includes(w.title.toLowerCase()));
+            const safeTitle = b.title.replace(/'/g, "\\'");
+            
+            let displayImg = b.image;
+            if (!displayImg || displayImg.includes('via.placeholder.com')) displayImg = "https://books.google.com.br/googlebooks/images/no_cover_thumb.gif";
+
+            listContainer.innerHTML += `
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0 position-relative" style="border-radius: 12px; overflow: hidden; ${isMatch ? 'border: 2px solid #2196F3 !important;' : ''}">
+                        ${isMatch ? '<span class="position-absolute top-0 end-0 badge bg-primary m-2 shadow-sm">★ Na sua Lista</span>' : ''}
+                        <img src="${displayImg}" class="card-img-top" style="height: 200px; object-fit: cover;" onerror="this.src='https://books.google.com.br/googlebooks/images/no_cover_thumb.gif'">
+                        <div class="card-body d-flex flex-column p-3">
+                            <h6 class="card-title fw-bold text-truncate mb-2">${b.title}</h6>
+                            <div class="mt-auto">
+                                <button onclick="startChat('${uid}', '${uname}', '${safeTitle}')" class="btn btn-primary btn-sm w-100 fw-bold">Interesse</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        });
+    }
+
     navTo('view-public-profile');
 }
